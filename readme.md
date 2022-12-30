@@ -20,7 +20,7 @@ Other excellent repo with cinemachine demonstrations and adventure game assets:
 
 [https://github.com/ciro-unity/cinemachine-market](https://github.com/ciro-unity/cinemachine-market)  
 
-I fixed everything that was broken so it can continue to be used for learning about timeline, cinemachine and the playables demostrated in the talk.  
+I fixed everything that was broken so it can continue to be used for learning about timeline, cinemachine and the playables demonstrated in the talk.  
 
 ## Steps to Follow to Run the Project  
 
@@ -34,9 +34,8 @@ I fixed everything that was broken so it can continue to be used for learning ab
 
 ## Notes on Contents and NavMeshAgentProgress playable  
 
-Find the Unite Europe 2017 talk by Andy Touch on youtube for an explanation of the project.    
-The original adventure game project (where all of the models/artwork came from) had a toon surface shader on all of the materials which can't render in URP. It can be downloaded free from the unity asset store.   
-
+Find the Unite Europe 2017 talk by Andy Touch on youtube for an explanation of the playables in the project.    
+   
 The conversations playable has been enhanced to use TMP_Text and TMP_FontAsset instead of the older UI elements. It was also enhanced by PlayApple to display character images.  
 
 The GuardTimeline is using a custom NavMeshAgentProgress playable which is different from the older NavMeshAgentControl playable available with the free default playables and included in this repo. The original playable allows for you to set a destination and only works in play mode. The NavMeshAgentProgress playable does a lot more than that.  
@@ -47,7 +46,7 @@ One thing to be aware of is that root motion curves in the animations can interf
 
 [Scripts/Playables/NavMeshAgentProgress/NavMeshAgentProgressPlayableBehaviour.cs#L123](Scripts/Playables/NavMeshAgentProgress/NavMeshAgentProgressPlayableBehaviour.cs#L123)    
 
-The playable adds a component to the NavMeshAgent's GameObject that's has an empty OnAnimatorMoved callback and removes it when the timeline is done. No clue why that fixes the problem but if you remove that part you'll see the issue I'm talking about.  
+The playable adds a component to the NavMeshAgent's GameObject that's has an empty OnAnimatorMoved callback and removes it when the timeline is done. No clue why that fixes the problem but if you remove that part you'll see the issue I'm talking about.    
 
 Like it says in the comment, this has something to do with what's described in this forum thread.  
 
