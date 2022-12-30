@@ -38,10 +38,7 @@ public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 	private double lastTime;
 	private float oldDistance = 0.0f;
 	private float distanceTotal = 0.0f;
-	private float elapsed = 0.0f;
-	private float clipProgress = 0.0f;
-	private double clipDuration = 0;
-	
+	private float elapsed = 0.0f;	
 	private NavMeshPath pathForward;
 	private NavMeshPath pathPast;
 	private Vector3[] cachePathForward;
@@ -136,8 +133,6 @@ public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 		lastTime = 0;
 		oldDistance = 0;
 		distanceTotal = 0;
-		clipProgress = 0;
-		clipDuration = 0;
 		ClearVector3Array(cachePathForward);
 		ClearVector3Array(cachePathPast);
 		ClearVector3Array(lastPathForwardArray);
@@ -154,8 +149,8 @@ public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 		if (!Mathf.Approximately(distanceTotal, oldDistance))
 			timeOffset = playable.GetTime();
 			
-		clipDuration = playable.GetDuration();
-		clipProgress = (float)(playable.GetTime() - timeOffset) / (float)(clipDuration - timeOffset);
+		double clipDuration = playable.GetDuration();
+		float clipProgress = (float)(playable.GetTime() - timeOffset) / (float)(clipDuration - timeOffset);
 		
 		forwardInTime = lastTime < playable.GetTime() ? true : false;
 		
@@ -259,10 +254,14 @@ public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 		// it's highly likely that the first few points will be the ones that the NavAgent is between
 		for (int i = newDirectionPath.Length - 1; i >= 1; i--)
 		{
-			// accumulate the distance we've analyzed so far
-			pathPointsDistance += Vector3.Distance(newDirectionPath[i], newDirectionPath[i - 1]);
-			
+			// these assignments are theoretical - only if the point ahead actually is ahead of the NavAgent will they be used
+			Vector3 pointPast = newDirectionPath[i];
+			Vector3 pointForward = newDirectionPath[i - 1];
+			float distanceBetweenPoints = Vector3.Distance(pointPast, pointForward);
+			float pathPointBehindDistance = pathPointsDistance;
+			pathPointsDistance += distanceBetweenPoints;
 			float pathPointAheadDistance = pathPointsDistance;
+			
 			// distance the agent is along the whole path
 			float agentProgress = progressPercent * distanceTotal;
 			
@@ -270,19 +269,15 @@ public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 			// remember time may be progressing backwards using timeline preview, so past and forward just means in respect to the next frame
 			if (pathPointAheadDistance > agentProgress)
 			{
-				Vector3 pointPast = newDirectionPath[i];
-				Vector3 pointForward = newDirectionPath[i - 1];
-				
-				float pathPointBehindDistance = pathPointsDistance - Vector3.Distance(pointPast, pointForward);
 				// the distance the NavAgent is ahead of the point behind
-				float agentProgressDistance = agentProgress - pathPointBehindDistance;
+				float agentProgressDistanceBetweenPoints = agentProgress - pathPointBehindDistance;
 				// get the direction between the two points
 				Vector3 directionToTravel = pointForward - pointPast;
 				// normalize the direction so it's between -1 and 1
 				directionToTravel.Normalize();
 				// the new position for the NavAgent ahead of the point behind the NavAgent depending on its progress
-				Vector3 newPosition = pointPast + (directionToTravel * agentProgressDistance);
-				newTransform.position = Vector3.Lerp(agent.transform.position, newPosition, agentPathProgress / (float)clipDuration);
+				Vector3 newPosition = pointPast + (directionToTravel * agentProgressDistanceBetweenPoints);
+				newTransform.position = Vector3.Lerp(agent.transform.position, newPosition, agentProgressDistanceBetweenPoints / distanceBetweenPoints);
 				// depending on the direction of time the NavAgent will face towards or away from the end of the path we analyzed
 				newDirection = _forward ? -directionToTravel : directionToTravel;
 				newTransform.rotation = Quaternion.Slerp(agent.transform.rotation, Quaternion.LookRotation(newDirection), Time.deltaTime * rotationSpeed);
