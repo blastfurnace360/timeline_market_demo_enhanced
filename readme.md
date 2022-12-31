@@ -1,8 +1,8 @@
 # Timeline Market Demo Enhanced  
 
-Note - There's an alternative version of this which uses the newer unity input system here [https://github.com/blastfurnace360/timeline_market_demo_input_system](https://github.com/blastfurnace360/timeline_market_demo_input_system). This repo uses the old input system which is easier but less versatile.  
-
 An updated version of the project files from the 'Unite Europe 2017 - Use Timeline and Cinemachine to mix gameplay & cutscenes' talk. It has been updated from the original to use the latest version of cinemachine, textmesh pro, URP, and has enhanced playables such as one that allows for you to use NavMesh paths on timeline with scrubbing and dynamic adjustments.   
+
+Note - There's an alternative version of this which uses the newer unity input system here [https://github.com/blastfurnace360/timeline_market_demo_input_system](https://github.com/blastfurnace360/timeline_market_demo_input_system). This repo uses the old input system which is easier but less versatile.  
 
 ![market demo screenshot](.github/market_demo_screenshot.png?raw=true "market demo screenshot")  
 
