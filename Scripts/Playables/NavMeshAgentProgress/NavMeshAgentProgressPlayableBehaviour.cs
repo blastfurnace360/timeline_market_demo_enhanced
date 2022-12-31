@@ -19,7 +19,6 @@ public class AnimatorEmptyCallback : MonoBehaviour
 [System.Serializable]
 public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 {
-
 	[HideInInspector]
 	public TimelineClip clip;
 	public NavMeshAgent agent;
@@ -63,8 +62,8 @@ public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 		// weird workaround required - without OnAnimatorMove callback timeline NavAgent playback is overriden by root motion animation
 		// related to https://forum.unity.com/threads/how-to-properly-use-onanimatormove-without-breaking-timeline.600199/	
 		//Debug.Log("OnGraphStop called");
-		if (agentGameObject != null && agentGameObject.TryGetComponent<AnimatorEmptyCallback>(out AnimatorEmptyCallback animatorEmptyCallback))
-			GameObject.DestroyImmediate(animatorEmptyCallback);
+		if (agentGameObject != null)
+			if (agentGameObject.TryGetComponent<AnimatorEmptyCallback>(out AnimatorEmptyCallback animatorEmptyCallback)) GameObject.DestroyImmediate(animatorEmptyCallback);
 	}
 	
 	private void LoadClipData(Playable playable, FrameData info)
@@ -95,8 +94,7 @@ public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 	
 	private void InitialSetUp(Playable playable, FrameData info)
 	{
-		if (agent == null || startTransform == null || targetTransform == null)
-			return;
+		if (agent == null || startTransform == null || targetTransform == null) return;
 		
 		Vector3[] pathForwardArray = UpdatePathForward(agent.transform.position, targetTransform.position, forwardInTime, lastPathForwardArray, false);
 		Vector3[] pathPastArray = UpdatePathPast(agent.transform.position, startTransform.position, forwardInTime, lastPathPastArray, false);
@@ -110,20 +108,17 @@ public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 		
 		// weird workaround required - without OnAnimatorMove callback timeline NavAgent playback is overriden by root motion animation
 		// related to https://forum.unity.com/threads/how-to-properly-use-onanimatormove-without-breaking-timeline.600199/
-		if (agentGameObject.GetComponent<AnimatorEmptyCallback>() == null)
-			agentGameObject.AddComponent<AnimatorEmptyCallback>();
+		if (agentGameObject.GetComponent<AnimatorEmptyCallback>() == null) agentGameObject.AddComponent<AnimatorEmptyCallback>();
 	}
 	
 	private void ClearVector3Array(Vector3[] vector3Array)
 	{
-		if (vector3Array != null)
-			Array.Clear(vector3Array, 0, vector3Array.Length);
+		if (vector3Array != null) Array.Clear(vector3Array, 0, vector3Array.Length);
 	}
 	
 	private void ClearCache()
 	{
 		elapsed = 0.0f;
-		updateRate = 0.01f;
 		pathForward = null;
 		pathPast = null;
 		timeOffset = 0;
@@ -146,8 +141,7 @@ public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 	
 	public override void PrepareFrame(Playable playable, FrameData info)
 	{
-		if (!Mathf.Approximately(distanceTotal, oldDistance))
-			timeOffset = playable.GetTime();
+		if (!Mathf.Approximately(distanceTotal, oldDistance)) timeOffset = playable.GetTime();
 			
 		double clipDuration = playable.GetDuration();
 		float clipProgress = (float)(playable.GetTime() - timeOffset) / (float)(clipDuration - timeOffset);
@@ -158,12 +152,15 @@ public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 		agentPathProgress = progressCurve.Evaluate(clipProgress);
 		
 		lastTime = playable.GetTime();
-		if (agent == null || targetTransform == null)
-			return;
+		if (agent == null || targetTransform == null) return;
 		
-		Vector3[] pathForwardArray = UpdatePathForward(agent.transform.position, targetTransform.position, forwardInTime, lastPathForwardArray, false);
+		elapsed += Time.deltaTime;
+		bool recalculatePath = elapsed > updateRate;
+		if (recalculatePath) elapsed = 0;
+		
+		Vector3[] pathForwardArray = UpdatePathForward(agent.transform.position, targetTransform.position, forwardInTime, lastPathForwardArray, recalculatePath);
 		lastPathForwardArray = pathForwardArray;
-		Vector3[] pathPastArray = UpdatePathPast(agent.transform.position, startTransform.position, forwardInTime, lastPathPastArray, false);
+		Vector3[] pathPastArray = UpdatePathPast(agent.transform.position, startTransform.position, forwardInTime, lastPathPastArray, recalculatePath);
 		lastPathPastArray = pathPastArray;
 		
 		Transform newTransform = CalculateTransformAlongPath(agentPathProgress, pathForwardArray, pathPastArray, forwardInTime); 
@@ -173,25 +170,15 @@ public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 		oldDistance = distanceTotal;
 	}
 	
-	private Vector3[] UpdatePathForward(Vector3 startPosition, Vector3 endPosition, bool _forwardInTime, Vector3[] lastPathForward, bool _recalculate = false)
+	private Vector3[] UpdatePathForward(Vector3 startPosition, Vector3 endPosition, bool _forwardInTime, Vector3[] lastPathForward, bool recalculate)
 	{
 		Vector3[] cornersForward = new Vector3[] { };
-		// Checks if NavMesh path calculation is valid this frame
+
 		bool canCalculatePathForward = true;
 		
-		if (pathForward == null)
-			pathForward = new NavMeshPath();
+		if (pathForward == null) pathForward = new NavMeshPath();
 			
-		if (updatePathPerFrame || cornersForward.Length <= 0 || _recalculate)
-		{
-			elapsed += Time.deltaTime;
-			if (elapsed > updateRate)
-			{
-				elapsed -= updateRate;
-				canCalculatePathForward = NavMesh.CalculatePath(startPosition, endPosition, NavMesh.AllAreas, pathForward);
-			}
-		}
-		
+		if (updatePathPerFrame || cornersForward.Length <= 0 || recalculate) canCalculatePathForward = NavMesh.CalculatePath(startPosition, endPosition, NavMesh.AllAreas, pathForward);		
 		cachePathForward = pathForward.corners;
 		cornersForward = cachePathForward;
 		NavMeshHit hit;
@@ -201,24 +188,15 @@ public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 		return !canCalculatePathForward ? lastPathForward : cornersForward;
 	}
 	
-	private Vector3[] UpdatePathPast(Vector3 startPos, Vector3 endPos, bool _forwardInTime, Vector3[] lastPathPast, bool _recalculate = false)
+	private Vector3[] UpdatePathPast(Vector3 startPos, Vector3 endPos, bool _forwardInTime, Vector3[] lastPathPast, bool recalculate)
 	{
 		Vector3[] cornersPast = new Vector3[] { };
 		
 		bool canCalculatePathPast = true;
 		
-		if (pathPast == null)
-			pathPast = new NavMeshPath();
-		
-		if (updatePathPerFrame || cornersPast.Length <= 0 || _recalculate)
-		{
-			elapsed += Time.deltaTime;
-			if (elapsed > updateRate)
-			{
-				elapsed -= updateRate;
-				canCalculatePathPast = NavMesh.CalculatePath(startPos, endPos, NavMesh.AllAreas, pathPast);
-			}
-		}
+		if (pathPast == null) pathPast = new NavMeshPath();
+
+		if (updatePathPerFrame || cornersPast.Length <= 0 || recalculate) canCalculatePathPast = NavMesh.CalculatePath(startPos, endPos, NavMesh.AllAreas, pathPast);
 		
 		cachePathPast = pathPast.corners;
 		cornersPast = cachePathPast;
@@ -231,7 +209,7 @@ public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 	// depending on the direction of time, the point the NavAgent is moving towards is found and the clip progress is used to
 	// find the exact location the NavAgent should be. Rotation towards or away from that point is given depending on the direction of time
 	
-	private Transform CalculateTransformAlongPath(float progress, Vector3[] pathForward, Vector3[] pathPast, bool _forward)
+	private Transform CalculateTransformAlongPath(float progress, Vector3[] pathForward, Vector3[] pathPast, bool forward)
 	{
 		Transform newTransform = agent.transform;
 		Vector3 newDirection = agent.transform.forward;
@@ -245,8 +223,8 @@ public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 		distanceTotal = distanceForward + distancePast;
 		
 		// Change progress percentage and path based on direction of time
-		float progressPercent = _forward ? 1 - progress : progress;
-		Vector3[] newDirectionPath =  _forward ? pathForward : pathPast;
+		float progressPercent = forward ? 1 - progress : progress;
+		Vector3[] newDirectionPath =  forward ? pathForward : pathPast;
 		
 		float pathPointsDistance = 0;
 		
@@ -279,28 +257,22 @@ public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 				Vector3 newPosition = pointPast + (directionToTravel * agentProgressDistanceBetweenPoints);
 				newTransform.position = Vector3.Lerp(agent.transform.position, newPosition, agentProgressDistanceBetweenPoints / distanceBetweenPoints);
 				// depending on the direction of time the NavAgent will face towards or away from the end of the path we analyzed
-				newDirection = _forward ? -directionToTravel : directionToTravel;
+				newDirection = forward ? -directionToTravel : directionToTravel;
 				newTransform.rotation = Quaternion.Slerp(agent.transform.rotation, Quaternion.LookRotation(newDirection), Time.deltaTime * rotationSpeed);
 			}
 		}
 		return newTransform;
 	}
 	
-	private float PathDistance(Vector3[] path)
+	private float PathDistance(Vector3[] points)
 	{
 		float totalDistance = 0;
-		for (int i = 0; i < path.Length - 1; i++)
-		{
-			totalDistance += Vector3.Distance(path[i], path[i + 1]);
-		}
+		for (int i = 0; i < points.Length - 1; i++) totalDistance += Vector3.Distance(points[i], points[i + 1]);
 		return totalDistance;
 	}
 	
 	private void DrawColoredLine(Vector3[] points, Color color)
 	{
-		for (int i = 0; i < points.Length - 1; i++)
-		{
-			Debug.DrawLine(points[i], points[i + 1], color);
-		}
+		for (int i = 0; i < points.Length - 1; i++) Debug.DrawLine(points[i], points[i + 1], color);
 	}
 }
