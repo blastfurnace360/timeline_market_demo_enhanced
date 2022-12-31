@@ -286,16 +286,13 @@ public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 		return newTransform;
 	}
 	
-	private float PathDistance(Vector3[] _path)
+	private float PathDistance(Vector3[] path)
 	{
 		float totalDistance = 0;
-		Vector3[] points = _path;
-		
-		for (int i = 0; i < points.Length - 1; i++)
+		for (int i = 0; i < path.Length - 1; i++)
 		{
-			totalDistance += Vector3.Distance(points[i], points[i + 1]);
+			totalDistance += Vector3.Distance(path[i], path[i + 1]);
 		}
-		
 		return totalDistance;
 	}
 	
