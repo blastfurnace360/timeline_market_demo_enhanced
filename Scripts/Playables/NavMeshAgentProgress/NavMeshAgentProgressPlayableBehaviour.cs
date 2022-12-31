@@ -10,7 +10,7 @@ using System.Linq;
 
 // weird workaround required - without OnAnimatorMove callback timeline NavAgent playback is overriden by root motion animation
 // related to https://forum.unity.com/threads/how-to-properly-use-onanimatormove-without-breaking-timeline.600199/
-public class AnimatorOverride : MonoBehaviour
+public class AnimatorEmptyCallback : MonoBehaviour
 {
 	public void OnAnimatorMove() {}
 }
@@ -110,8 +110,8 @@ public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 		
 		// weird workaround required - without OnAnimatorMove callback timeline NavAgent playback is overriden by root motion animation
 		// related to https://forum.unity.com/threads/how-to-properly-use-onanimatormove-without-breaking-timeline.600199/
-		if (agentGameObject.GetComponent<AnimatorOverride>() == null)
-			agentGameObject.AddComponent<AnimatorOverride>();
+		if (agentGameObject.GetComponent<AnimatorEmptyCallback>() == null)
+			agentGameObject.AddComponent<AnimatorEmptyCallback>();
 	}
 	
 	private void ClearVector3Array(Vector3[] vector3Array)
