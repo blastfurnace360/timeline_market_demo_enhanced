@@ -63,8 +63,8 @@ public class NavMeshAgentProgressPlayableBehaviour : PlayableBehaviour
 		// weird workaround required - without OnAnimatorMove callback timeline NavAgent playback is overriden by root motion animation
 		// related to https://forum.unity.com/threads/how-to-properly-use-onanimatormove-without-breaking-timeline.600199/	
 		//Debug.Log("OnGraphStop called");
-		if (agentGameObject != null && agentGameObject.GetComponent<AnimatorOverride>() != null)
-			GameObject.DestroyImmediate(agentGameObject.GetComponent<AnimatorOverride>());
+		if (agentGameObject != null && agentGameObject.TryGetComponent<AnimatorEmptyCallback>(out AnimatorEmptyCallback animatorEmptyCallback))
+			GameObject.DestroyImmediate(animatorEmptyCallback);
 	}
 	
 	private void LoadClipData(Playable playable, FrameData info)
